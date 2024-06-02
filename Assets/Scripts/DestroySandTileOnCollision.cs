@@ -13,7 +13,7 @@ public class DestroySandTileOnCollision : MonoBehaviour
             tileMap = GetComponent<Tilemap>();
     }
 
-    private void OnMouseDown()
+    public void OnMouseDown()
     {
         if (!playerTransform)
             return;

@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -10,7 +12,11 @@ public class PlayerMovement : MonoBehaviour
     Animator anim;
     [SerializeField] float runSpeed = 5f;
     [SerializeField] float climbSpeed = 5f; // Duvar tırmanma hızı
+    [SerializeField] float reloadTime = 1f;
     private bool isClimbing = false;
+    private bool isDead = false;
+
+    bool canMove = true;
 
     void Start()
     {
@@ -20,9 +26,14 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        if (canMove == true)
+        {
         Run();
         UpdateAnimator();
-         FlipSprite();
+        FlipSprite();
+       
+        
+        }
     }
 
     void OnMove(InputValue value)
@@ -102,4 +113,93 @@ public class PlayerMovement : MonoBehaviour
             rb.gravityScale = 1; // Yere döndüğünde yer çekimini tekrar aç
         }
     }
+
+void OnCollisionEnter2D(Collision2D collision)
+{
+    // Check if the character collides with an obstacle
+    if (collision.collider.CompareTag("Obstacle"))
+    {
+        isDead = true;
+        Die();
+        anim.SetBool("isDead", isDead);
+        DisableControls();
+        Invoke("ReloadScene", reloadTime);
+    }
+    // Check if the character collides with poison
+    if (collision.collider.CompareTag("poison")) 
+    {
+        isDead = true;
+        Die();
+        anim.SetBool("isDead", isDead);
+        DisableControls();
+       Invoke("ReloadScenee", reloadTime);
+    }
+     if (collision.collider.CompareTag("foot")) 
+    {
+        isDead = true;
+        Die();
+        anim.SetBool("isDead", isDead);
+        DisableControls();
+       Invoke("ReloadScenee", reloadTime);
+    }
+     if (collision.collider.CompareTag("venom")) 
+    {
+        isDead = true;
+        Die();
+        anim.SetBool("isDead", isDead);
+        DisableControls();
+       Invoke("ReloadSceneee", reloadTime);
+    }
+      if (collision.collider.CompareTag("water")) 
+    {
+        isDead = true;
+        Die();
+        anim.SetBool("isDead", isDead);
+        DisableControls();
+       Invoke("ReloadSceneeee", reloadTime);
+    }
+}
+
+void ReloadSceneeee()
+{
+    // Assuming "MainScene" is the name of the scene you want to load
+    SceneManager.LoadScene(2);
+    
+}
+void ReloadSceneee()
+{
+    // Assuming "MainScene" is the name of the scene you want to load
+    SceneManager.LoadScene(2);
+    
+}
+void ReloadScenee()
+{
+    // Assuming "MainScene" is the name of the scene you want to load
+    SceneManager.LoadScene(3);
+    
+}
+
+
+    public void DisableControls()
+    {
+        canMove = false;
+    }
+
+
+    void Die()
+    {
+        
+         isDead = true;
+        Debug.Log("die");
+    }
+
+
+
+    void ReloadScene()
+    {
+            SceneManager.LoadScene(4);
+
+    }
+
+
 }
