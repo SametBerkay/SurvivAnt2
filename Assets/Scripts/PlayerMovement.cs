@@ -163,7 +163,7 @@ void OnCollisionEnter2D(Collision2D collision)
 void ReloadSceneeee()
 {
     // Assuming "MainScene" is the name of the scene you want to load
-    SceneManager.LoadScene(2);
+    SceneManager.LoadScene(3);
     
 }
 void ReloadSceneee()

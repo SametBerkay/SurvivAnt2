@@ -1,41 +1,40 @@
 using UnityEngine;
-using UnityEngine.SceneManagement; // Sahne yönetimi için eklenen kütüphane
+using UnityEngine.SceneManagement;
 
 public class GrabObjects : MonoBehaviour
 {
-    public Transform player; // Ana karakter referansı
-    public Transform childAnt; // Yavru karınca referansı
-    public Transform carryPosition; // Yavruyu taşımak için boş obje
-    public float grabDistance = 2.0f; // Yavruyu taşıma mesafesi
-    private bool isCarrying = false; // Yavru taşınıyor mu?
+    public Transform player;
+    public Transform childAnt;
+    public Transform carryPosition;
+    public float grabDistance = 2.0f;
+    private bool isCarrying = false;
     public bool hasFood = false;
     public float destroyDelay = 0.5f;
-    public SpriteRenderer foodSprite; // hasFood durumunu göstermek için sprite referansı
-    private bool inSafePlace = false; // Bebek güvenli alanda mı?
-    private bool kidInSafePlace = false; // Bebek güvenli alanda mı?
-    public int requiredFoodCount = 5; // Gerekli food sayısı
-    private int deliveredFoodCount = 0; // Teslim edilen food sayısı
-    public float sceneChangeDelay = 1.0f; // Sahne değişim gecikmesi
-    public int nextSceneIndex; // Geçilecek sahnenin numarası
-    public string nextLevelTag = "NextLevel"; // Geçiş yapılacak alanın tag'i
+    public SpriteRenderer foodSprite;
+    public int requiredFoodCount = 5;
+    private int deliveredFoodCount = 0;
+    public float sceneChangeDelay = 1.0f;
+    public int nextSceneIndex;
+    public string nextLevelTag = "NextLevel";
+    private KidSafePlace kidSafePlace;
 
     void Start()
     {
-        // Null kontrolleri
         if (player == null) Debug.LogError("Player referansı ayarlanmadı.");
         if (childAnt == null) Debug.LogError("Child Ant referansı ayarlanmadı.");
         if (carryPosition == null) Debug.LogError("Carry Position referansı ayarlanmadı.");
         if (foodSprite == null) Debug.LogError("Food Sprite referansı ayarlanmadı.");
+
+        kidSafePlace = childAnt.GetComponent<KidSafePlace>();
+        if (kidSafePlace == null) Debug.LogError("Child Ant üzerinde KidSafePlace bileşeni bulunamadı.");
     }
 
     void Update()
     {
-        // Null kontrolü
-        if (player == null || childAnt == null || carryPosition == null || foodSprite == null) return;
+        if (player == null || childAnt == null || carryPosition == null || foodSprite == null || kidSafePlace == null) return;
 
         float distance = Vector3.Distance(player.position, childAnt.position);
 
-        // Yavruya belirli bir mesafede ve "E" tuşuna basılmışsa
         if (distance <= grabDistance && Input.GetKeyDown(KeyCode.E) && !hasFood)
         {
             if (isCarrying)
@@ -48,86 +47,63 @@ public class GrabObjects : MonoBehaviour
             }
         }
 
-        // Yavru taşınıyorsa, onu taşıma pozisyonuna hareket ettir
         if (isCarrying)
         {
             childAnt.position = carryPosition.position;
         }
 
-        // Sprite görünürlüğünü hasFood durumuna göre ayarla
         foodSprite.enabled = hasFood;
     }
 
     void CarryChild()
     {
-        if (hasFood) return; // Eğer hasFood true ise, yavruyu taşıma
+        if (hasFood) return;
 
         isCarrying = true;
         childAnt.SetParent(carryPosition);
-        childAnt.localPosition = Vector3.zero; // Taşıma pozisyonuna yerleştir
+        childAnt.localPosition = Vector3.zero;
     }
 
     void DropChild()
     {
         isCarrying = false;
-        childAnt.SetParent(null); // Yavruyu istediği yerde bırak
-        childAnt.position = new Vector3(childAnt.position.x, childAnt.position.y + 0.5f, childAnt.position.z); // 0.5 birim yukarıda bırak
-
-        if (inSafePlace)
-        {
-            kidInSafePlace = true; // Yavruyu güvenli alanda bıraktık
-        }
-        else
-        {
-            kidInSafePlace = false; // Yavruyu güvenli alanda bırakmadık
-        }
+        childAnt.SetParent(null);
+        childAnt.position = new Vector3(childAnt.position.x, childAnt.position.y + 1.0f, childAnt.position.z);
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Food") && !hasFood && kidInSafePlace)
+        if (other.CompareTag("Food") && !hasFood && kidSafePlace.IsInSafePlace)
         {
-            Debug.Log("Ezi çiyyyeee");
+            Debug.Log("Food collected");
             hasFood = true;
             Destroy(other.gameObject, destroyDelay);
         }
-        else if (other.CompareTag("kid") && hasFood && kidInSafePlace)
+        else if (other.CompareTag("kid") && hasFood && kidSafePlace.IsInSafePlace)
         {
-            Debug.Log("HAt KERWANEEE");
+            Debug.Log("Food delivered to kid");
             hasFood = false;
-            deliveredFoodCount++; // Teslim edilen food sayısını artır
+            deliveredFoodCount++;
 
-            // Gerekli food sayısına ulaşıldıysa sahne geçişi yap
+            // Teslim edilen food sayısını kontrol et ve gerekli sayıya ulaşıldıysa sahne geçişi yap
             if (deliveredFoodCount >= requiredFoodCount)
             {
-                Invoke("ChangeSceneWithDelay", sceneChangeDelay); // Sahne değişim gecikmesi ile sahne geçişi
+                Invoke("ChangeSceneWithDelay", sceneChangeDelay);
             }
-        }
-        else if (other.CompareTag("SafePlace"))
-        {
-            inSafePlace = true;
         }
         else if (other.CompareTag(nextLevelTag) && isCarrying)
         {
-            Invoke("ChangeSceneImmediate", sceneChangeDelay); // NextLevel tag'i ile sahne geçişi
-        }
-    }
-
-    void OnTriggerExit2D(Collider2D other)
-    {
-        if (other.CompareTag("SafePlace"))
-        {
-            inSafePlace = false;
+            Invoke("ChangeSceneImmediate", sceneChangeDelay);
         }
     }
 
     void ChangeSceneWithDelay()
     {
-        SceneManager.LoadScene(nextSceneIndex); // Sahne numarasına göre sahne değişimi
+        SceneManager.LoadScene(nextSceneIndex);
     }
 
     void ChangeSceneImmediate()
     {
-        SceneManager.LoadScene(3); // Sahne numarasına göre sahne değişimi
+        SceneManager.LoadScene(3);
     }
 }
